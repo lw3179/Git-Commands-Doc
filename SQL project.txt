@@ -1,0 +1,97 @@
+
+Problem set 1 Question 2
+Can you provide a table with the movie titles and divide them into 4 levels 
+(first_quarter, second_quarter, third_quarter, and final_quarter) based on the quartiles (25%, 50%, 75%) of the rental duration for movies across all categories
+ Make sure to also indicate the category that these family-friendly movies fall into. 
+
+
+Query 2 for Slide 1
+SELECT 
+  f.title film_title,
+  c.name category_name,
+  f.rental_duration AS rental_duration,
+  NTILE(4) OVER (ORDER BY f.rental_duration) AS quartiles
+FROM film f
+JOIN film_category fc
+  ON fc.film_id = f.film_id
+JOIN category c
+  ON fc.category_id = c.category_id
+WHERE c.name IN ('Animation', 'Children', 'Classics', 'Comedy', 'Family', 'Music')
+GROUP BY 1, 2, 3
+ORDER BY 3 DESC;
+
+
+
+
+Problem set 1 Question 3
+Finally, provide a table with the family-friendly film category, each of the quartiles, 
+and the corresponding count of movies within each combination of film category for each corresponding rental duration category.
+ The resulting table should have three columns
+
+Query 3 for Slide 2
+SELECT category_name, quartiles, COUNT(category_name)
+FROM( 
+  SELECT c.name category_name,
+NTILE (4) OVER (ORDER BY f.rental_duration) AS quartiles
+  FROM film f
+  JOIN film_category fc
+  ON fc.film_id = f.film_id
+  JOIN category c
+  ON c.category_id = fc.category_id
+  WHERE c.name IN ('Animation', 'Children', 'Classics', 'Comedy', 'Family', 'Music')) t1
+GROUP BY 1, 2
+ORDER BY 1, 2;
+
+
+
+
+Problem set 2 Question 1
+Write a query that returns the store ID for the store, the year and month and the number of rental orders each store has fulfilled for that month. 
+Your table should include a column for each of the following year, month, store ID and count of rental orders fulfilled during that month.
+
+Query 1 for Slide 3
+
+SELECT DATE_PART('YEAR', rental_date) YEARS,
+	   DATE_PART('MONTH', rental_date) MONTHS, store.store_id, COUNT()
+FROM rental
+JOIN staff
+ON staff.staff_id = rental.staff_id
+JOIN store
+ON store.store_id = staff.store_id
+GROUP BY 1, 2, 3
+ORDER BY 4 DESC;
+
+
+
+
+
+
+
+Problem set 2 Question 2
+We would like to know who were our top 10 paying customers, how many payments they made on a monthly basis during 2007, 
+and what was the amount of the monthly payments. 
+Can you write a query to capture the customer name, month and year of payment, and total payment amount for each month by these top 10 paying customers
+
+
+Query 2 for Slide 4
+
+SELECT 
+DATE_TRUNC('month', p.payment_date) pay_month,
+c.first_name  ' '  c.last_name AS full_name, 
+COUNT(p.amount) AS pay_countpermon, SUM(p.amount) AS pay_amount
+FROM customer c
+JOIN payment p
+ON p.customer_id = c.customer_id
+WHERE c.first_name  ' '  c.last_name IN
+(SELECT t1.full_name
+FROM
+(SELECT c.first_name  ' '  c.last_name AS full_name, SUM(p.amount) as amount_total
+FROM customer c
+JOIN payment p
+ON p.customer_id = c.customer_id
+GROUP BY 1	
+ORDER BY 2 DESC
+LIMIT 10) t1)
+AND (p.payment_date BETWEEN '2007-01-01' AND '2008-01-01')
+GROUP BY 1, 2
+ORDER BY 1, 2, 3;
